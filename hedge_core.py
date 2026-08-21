@@ -71,7 +71,8 @@ def hedge_vote(win, k, smooth, j, hit, pred):
     返回 (kill, sel_idx, weights, votes, top_rate)"""
     lo = j - win
     rates = hit[:, lo:j].mean(axis=1)                      # (K,)
-    ti = np.argsort(-rates)[:k]
+    # 稳定 TopK：命中率降序，并列按专家索引升序（确定性，跨 numpy 版本/机器结果一致）
+    ti = np.lexsort((np.arange(len(rates), dtype=np.int64), -rates))[:k]
     w = np.maximum(rates[ti], smooth)
     votes = np.bincount(pred[ti, j], weights=w, minlength=10)
     kill = int(np.argmax(votes))
@@ -321,7 +322,8 @@ def build_leaderboard(pool, hit, L0, N, best_win):
     """池内专家按最近 best_win 期命中率 Top50。"""
     j = (N - 1) - L0
     rates = hit[:, j - best_win + 1:j + 1].mean(axis=1)
-    idx = np.argsort(-rates)[:50]
+    # 稳定 Top50：并列按索引升序（与 hedge_vote 一致，跨环境确定性）
+    idx = np.lexsort((np.arange(len(rates), dtype=np.int64), -rates))[:50]
     return [{'name': pool[i]['name'], 'fam': pool[i]['family'],
              'rate_recent': round(float(rates[i]), 4)} for i in idx]
 
