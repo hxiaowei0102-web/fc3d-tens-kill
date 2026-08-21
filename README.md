@@ -15,12 +15,13 @@
 |---|---|
 | 调度 | cron 三重备份：`0 14` / `30 15` / `0 17` UTC（北京 22:00 / 23:30 / 次日01:00），3次机会兜底 |
 | 数据源 | huiniao（主）→ 17500 / apihz / cwl / kjh_55128 / 55128 / 8200 / vipkj 多源降级 + CSV兜底 |
-| 防污染 | 跨源交叉校验：新期号多源一致才采纳，1v1 无多数拒绝 |
+| 防污染 | 跨源交叉校验：新期号多源一致才采纳，1v1 无多数拒绝；单源兜底(紧邻期)防卡死 |
 | 提交 | 数据变化才 commit/push，无变化跳过（省 Actions 分钟数） |
-| 部署 | actions/configure-pages + upload-pages-artifact + deploy-pages |
+| 部署 | 每次 cron 都部署（失败自动补部署）；configure-pages + deploy-pages |
+| 单入口 | `update.py --cloud`（本地/云端共用同一份代码，fingerprint 三要素统一） |
 
 ## 手动触发
-GitHub Actions 页面 → 选中 workflow → Run workflow（可用于补跑/测试）。
+GitHub Actions 页面 → 选中 workflow → Run workflow（勾选 force_deploy=true 可强制重算并重新部署）。
 
 ## 免责声明
 彩票开奖为独立随机事件，预测仅为算法研究，**不构成任何购彩建议**。请理性购彩。

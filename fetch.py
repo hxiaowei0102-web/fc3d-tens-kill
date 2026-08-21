@@ -181,7 +181,15 @@ def fetch_latest():
                 others = [f"{v[0]}{v[1]}{v[2]}×{n}" for v, n in cnt.items() if v != top_val]
                 print(f"  ⚠ 期号{iss} 源冲突，采纳多数票 {top_val[0]}{top_val[1]}{top_val[2]}（{top_n}票） vs {others}")
         else:
-            print(f"  ⚠ 期号{iss} 仅1源确认（{top_n}票）且无其他源佐证，拒绝采纳避免脏数据")
+            # 单源兜底：确实只有1个源可用时，若该期号是本地最新+1（紧邻下一期），
+            # 则采纳并告警——否则数据源全部失效时开奖将永远无法入库。
+            # 注意用 len(fetched)==1 而非 len(agg)==1：后者在多源 1v1 冲突时
+            # 也会是单期，错误触发兜底会采纳冲突脏数据。
+            if len(fetched) == 1 and local_last and int(iss) == int(local_last) + 1:
+                print(f"  ⚠ 期号{iss} 仅{len(fetched)}个源可用，单源兜底采纳（本地最新+1紧邻期）")
+                approved.append((iss, top_val[0], top_val[1], top_val[2], None))
+            else:
+                print(f"  ⚠ 期号{iss} 仅1源确认（{top_n}票）且无其他源佐证，拒绝采纳避免脏数据")
     if not approved:
         print("  ❌ 跨源校验后无可用新期号，使用现有CSV")
         return {}

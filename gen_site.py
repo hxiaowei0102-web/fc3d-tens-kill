@@ -1,18 +1,20 @@
 # -*- coding: utf-8 -*-
 """
-福彩3D 十位杀一码 — 生成固定静态网页「index.html」（云端 Pages 入口）
+福彩3D 十位杀一码 — 生成固定静态网页（本地「十位杀一码.html」/ 云端「index.html」）
 =========================================================
 读 cache/result.json, 输出一个完全自包含的单文件 HTML:
 数据以 window.__DATA__ 内联 JSON 嵌入, 双击即开, 零后端, 可传手机浏览。
 网页风格以 D:\\通杀一码\\通杀一码.html 为准（浅色移动优先、红色杀码大字、白卡片、逐期表近期在上）。
-云端版：输出文件名改为 index.html，供 GitHub Pages 直接访问。
+输出文件名由环境变量 FC3D_OUT_HTML 控制：云端(GitHub Pages)设为 index.html，本地默认 十位杀一码.html。
 """
 import json
 import os
 
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 CACHE_JSON = os.path.join(BASE_DIR, 'cache', 'result.json')
-OUT_HTML = os.path.join(BASE_DIR, 'index.html')
+OUT_HTML = os.environ.get('FC3D_OUT_HTML') or os.path.join(BASE_DIR, '十位杀一码.html')
+if not os.path.isabs(OUT_HTML):
+    OUT_HTML = os.path.join(BASE_DIR, OUT_HTML)
 
 # 内置样式（复刻通杀一码.css）
 CSS_TEXT = """
@@ -324,8 +326,7 @@ def main():
     print(f"数据至 {data['data_info']['last']} 期 | 公式池 {data['pool_info']['pool_size_total']:,} | 专家池 {data['pool_info']['topk']}")
     print(f"机制: Hedge(K={n['n_experts']},win={n['win']}) | 回测 {s['hit']}/{s['total']} = {s['rate']*100:.2f}% (基线90%)")
     print(f"下一期 {n['target_issue']} 十位杀 {n['kill']}")
-    print("手机访问 GitHub Pages 即可查看最新结果。")
-
+    print("手机访问 GitHub Pages / 本地双击 HTML 均可查看。")
 
 if __name__ == '__main__':
     main()

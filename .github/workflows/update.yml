@@ -10,7 +10,7 @@ on:
   workflow_dispatch:
     inputs:
       force_deploy:
-        description: '强制重新部署页面（即使无数据变化）'
+        description: '强制重算并重新部署（忽略缓存）'
         required: false
         default: 'false'
         type: boolean
@@ -47,19 +47,23 @@ jobs:
       - name: 安装依赖(numpy)
         run: pip install "numpy>=1.26,<3"
 
-      - name: 运行云端更新脚本(多源降级抓取+云端追加CSV+穷举+回测+生成页面)
-        run: python update_cloud.py || exit 1
+      - name: 运行云端更新脚本(多源降级抓取+跨源校验+追加CSV+穷举+回测+生成页面)
+        run: |
+          if [ "${{ inputs.force_deploy }}" == "true" ]; then
+            python update.py --cloud --force || exit 1
+          else
+            python update.py --cloud || exit 1
+          fi
 
       - name: 检查是否有真实更新
         id: check
         run: |
           if [ "${{ inputs.force_deploy }}" == "true" ]; then
             echo "changed=true" >> $GITHUB_OUTPUT
-            echo "force_deploy=true: 强制部署"
+            echo "force_deploy=true: 强制重算部署"
           elif git diff --quiet data/fc3d-history.csv && git diff --quiet cache/pool.json && git diff --quiet cache/result.json && git diff --quiet index.html; then
             echo "changed=false" >> $GITHUB_OUTPUT
-            git checkout -- index.html 2>/dev/null || true
-            echo "无新数据/无池变化/无页面变化，跳过提交与部署"
+            echo "无新数据/无池变化/无页面变化，跳过提交"
           else
             echo "changed=true" >> $GITHUB_OUTPUT
             echo "检测到真实更新(CSV/专家池/页面)"
@@ -81,23 +85,22 @@ jobs:
             sleep 3
           done
 
+      # 部署步骤不设条件：每次 cron 都重新部署一次当前 index.html。
+      # 兜底效果：若某次部署失败（网络/Pages 瞬时故障），下次 cron 会自动补部署，
+      # 不会出现"数据已提交但页面永远卡旧"的静默故障。
       - name: 准备部署文件
-        if: steps.check.outputs.changed == 'true'
         run: |
           mkdir -p _site
           cp index.html _site/
 
       - name: 配置Pages
-        if: steps.check.outputs.changed == 'true'
         uses: actions/configure-pages@v5
 
       - name: 上传部署产物
-        if: steps.check.outputs.changed == 'true'
         uses: actions/upload-pages-artifact@v3
         with:
           path: ./_site
 
       - name: 部署到GitHub Pages
-        if: steps.check.outputs.changed == 'true'
         id: deployment
         uses: actions/deploy-pages@v4
