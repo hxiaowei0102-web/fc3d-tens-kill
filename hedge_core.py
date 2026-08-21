@@ -169,6 +169,7 @@ def run_backtest(pool, pred, hit, L0, issues, hh, tt, oo, best_win, best_k):
         rows.append({
             'issue': str(issues[t]),
             'num': f"{hh[t]}{tt[t]}{oo[t]}",
+            'tens': int(tt[t]),              # 真实开奖十位（逐期对账用）
             'kill': kill,
             'hit': bool(kill != int(tt[t])),
             'top3': _top3_codes(kill, votes),
@@ -241,6 +242,7 @@ def run_backtest_long(pool, issues, hh, tt, oo, best_win, best_k, n_seg=1000):
         rows.append({
             'issue': str(issues[t]),
             'num': f"{hh[t]}{tt[t]}{oo[t]}",
+            'tens': int(tt[t]),              # 真实开奖十位（逐期对账用）
             'kill': kill,
             'hit': bool(kill != int(tt[t])),
             'top3': _top3_codes(kill, votes),

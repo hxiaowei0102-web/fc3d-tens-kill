@@ -57,6 +57,9 @@ tbody td{padding:7px 6px;text-align:center;border-bottom:1px solid #f3f4f6}
 tbody tr:active{background:#f9fafb}
 td.iss{color:#6b7280;font-family:ui-monospace,Consolas,monospace;font-size:11.5px}
 td.num{font-weight:700;letter-spacing:1px}
+td.tens{font-size:16px;font-weight:800;width:34px}
+td.tens.ok{color:#059669}
+td.tens.bad{color:#dc2626;background:#fee2e2;border-radius:50%}
 td.kill{font-weight:800;font-size:15px}
 td.kill.hit{color:#059669}
 td.kill.miss{color:#dc2626}
@@ -124,7 +127,7 @@ BODY_TEMPLATE = """
     <h3>📋 逐期真实预测记录 <span style="color:#9ca3af;font-weight:400">(500期 · 近期在上 · 含Top3票码)</span></h3>
     <div class="tbl-scroll">
       <table>
-        <thead><tr><th>期号</th><th>开奖</th><th>票码Top3</th><th>杀码</th><th>结果</th><th>首席专家</th></tr></thead>
+        <thead><tr><th>期号</th><th>开奖</th><th>十位</th><th>票码Top3</th><th>杀码</th><th>结果</th><th>首席专家</th></tr></thead>
         <tbody id="tbBody"></tbody>
       </table>
     </div>
@@ -144,7 +147,7 @@ BODY_TEMPLATE = """
       <div class="warn" id="warn1000"></div>
       <div class="tbl-scroll" style="max-height:45vh">
         <table>
-          <thead><tr><th>期号</th><th>开奖</th><th>票码Top3</th><th>杀码</th><th>结果</th><th>首席专家</th></tr></thead>
+          <thead><tr><th>期号</th><th>开奖</th><th>十位</th><th>票码Top3</th><th>杀码</th><th>结果</th><th>首席专家</th></tr></thead>
           <tbody id="tbBody1000"></tbody>
         </table>
       </div>
@@ -258,9 +261,11 @@ function render(d){{
     var cls = r.hit ? "hit" : "miss";
     var t3 = (r.top3 || [r.kill]).map(function(c, i){{ return i === 0 ? '<b>' + c + '</b>' : c; }}).join("·");
     var vd = r.votes ? " · 票数分布[" + r.votes.map(function(v){{return v.toFixed(1);}}).join(",") + "]" : "";
+    var tens = (r.tens != null) ? r.tens : String(r.num).charAt(1);   // 兼容旧缓存：从开奖号取十位
     html += '<tr class="' + (r.hit ? "" : "miss-row") + '">' +
       '<td class="iss">' + r.issue + '</td>' +
       '<td class="num">' + r.num + '</td>' +
+      '<td class="tens ' + (r.hit ? "ok" : "bad") + '">' + tens + '</td>' +
       '<td class="t3">' + t3 + '</td>' +
       '<td class="kill ' + cls + '">' + r.kill + '</td>' +
       '<td class="res">' + (r.hit ? "✅" : "❌") + '</td>' +
@@ -285,9 +290,11 @@ function render(d){{
       var cls = r.hit ? "hit" : "miss";
       var t3 = (r.top3 || [r.kill]).map(function(c, i){{ return i === 0 ? '<b>' + c + '</b>' : c; }}).join("·");
       var vd = r.votes ? " · 票数分布[" + r.votes.map(function(v){{return v.toFixed(1);}}).join(",") + "]" : "";
+      var tens = (r.tens != null) ? r.tens : String(r.num).charAt(1);   // 兼容旧缓存
       html2 += '<tr class="' + (r.hit ? "" : "miss-row") + '">' +
         '<td class="iss">' + r.issue + '</td>' +
         '<td class="num">' + r.num + '</td>' +
+        '<td class="tens ' + (r.hit ? "ok" : "bad") + '">' + tens + '</td>' +
         '<td class="t3">' + t3 + '</td>' +
         '<td class="kill ' + cls + '">' + r.kill + '</td>' +
         '<td class="res">' + (r.hit ? "✅" : "❌") + '</td>' +
