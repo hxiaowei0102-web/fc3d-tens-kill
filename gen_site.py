@@ -155,6 +155,17 @@ BODY_TEMPLATE = """
   </div>
 
   <div class="card">
+    <h3>📌 真实预测记录 <span style="color:#9ca3af;font-weight:400">(每期开奖前真实发布的杀码 · 含当时参数)</span></h3>
+    <div class="tbl-scroll" style="max-height:40vh">
+      <table>
+        <thead><tr><th>预测期</th><th>发布杀码</th><th>参数</th><th>发布时间</th><th>开奖十位</th><th>结果</th></tr></thead>
+        <tbody id="realBody"><tr><td colspan="6" style="color:#9ca3af">加载中...</td></tr></tbody>
+      </table>
+    </div>
+    <div class="compare" style="margin-top:6px"><span id="realNote" style="font-size:11px;color:#9ca3af">-</span></div>
+  </div>
+
+  <div class="card">
     <h3>🎛 参数网格扫描 <span style="color:#9ca3af;font-weight:400">(270组合双段自动选优)</span></h3>
     <div class="scan-grid" id="scanGrid"></div>
     <div class="compare" style="margin-top:8px"><span id="bestScanNote">-</span></div>
@@ -171,7 +182,7 @@ BODY_TEMPLATE = """
     <b>说明</b><br>
     ① 十位杀一码 = 预测杀掉 0-9 中一个数字，下期<b>十位</b>不出现即命中，理论随机基线 <b>90%</b>。<br>
     ② 公式池 <b id="fc">-</b> 个暴力穷举算法（<span id="nfeat">-</span>特征线性组合），在<b>最新500期</b>按命中率选 Top560 专家池（按族限选保证多样性），主机制 <b>Hedge 加权投票</b>：每期取近 <span id="pWin">-</span> 期命中率 Top<span id="pK">-</span> 专家，按命中率加权投票，票王 = 十位杀码。参数经 <b>270 组合双段网格扫描</b>自动选优（段内500期 + 前500期样本外稳健性：先保段内最优、再挑样本外最稳，防选择偏差峰值）。<br>
-    ③ 回测为<b>逐期真实预测记录</b>：第 t 期预测只用第 t-1、t-2 期数据（walk-forward，不偷看未来）。<br>
+    ③ 回测为<b>事后统一重算</b>（walk-forward 不偷看未来，但参数是最终选定的）——500/1000期回测表是<b>参考口径</b>；<b>「📌 真实预测记录」才是每期开奖前真实发布的杀码</b>（自归档日起逐期累积，含当时参数）。<br>
     ④ <b>选择偏差警示</b>：专家池是在回测的同一段 500 期上按命中率选出的——段内高分是选择偏差上界（270组合中挑峰值），真实水平更接近「样本外稳健性」指标（前500期独立段回测）；「固定公式」高分同为<b>选择偏差假象</b>（5924万公式中挑最大值）。<b>不构成任何购彩建议</b>。<br>
     ⑤ <b>固定快照</b>：本页为数据快照（生成于 <span id="genTime">-</span>），数据更新后请重新导出。
   </div>
@@ -272,6 +283,36 @@ function render(d){{
       '<td class="fname" title="' + r.fname + ' [' + r.fam + ']' + vd + '">' + r.fname + '</td></tr>';
   }});
   $("tbBody").innerHTML = html;
+
+  // ---- 真实预测记录（每期开奖前真实发布）----
+  if (d.real && d.real.length > 0) {{
+    var rh = "";
+    d.real.forEach(function(r){{
+      var st = "";
+      if (r.hit === true) st = '✅命中';
+      else if (r.hit === false) st = '❌杀错';
+      else st = '⏳待开奖';
+      var tensTxt = (r.tens != null) ? r.tens : '-';
+      var tensCls = (r.hit === true) ? "ok" : (r.hit === false) ? "bad" : "";
+      var pub = r.published_at ? String(r.published_at).slice(5, 16) : '-';
+      rh += '<tr>' +
+        '<td class="iss">' + r.target_issue + '</td>' +
+        '<td class="kill ' + (r.hit === true ? "hit" : (r.hit === false ? "miss" : "")) + '">' + r.kill + '</td>' +
+        '<td class="frate">win' + r.win + '/K' + r.k + '</td>' +
+        '<td class="frate">' + pub + '</td>' +
+        '<td class="tens ' + tensCls + '">' + tensTxt + '</td>' +
+        '<td class="res">' + st + '</td></tr>';
+    }});
+    $("realBody").innerHTML = rh;
+    var done = d.real.filter(function(r){{ return r.hit != null; }}).length;
+    var hits = d.real.filter(function(r){{ return r.hit === true; }}).length;
+    $("realNote").textContent = "已归档 " + d.real.length + " 期真实预测 · 已开奖 " + done + " 期 · 命中 " + hits + "/" + done +
+      (done > 0 ? " = " + (hits/done*100).toFixed(1) + "%" : "") + "（自归档日起逐期累积，历史500期为事后重算参考）";
+  }} else {{
+    $("realBody").innerHTML = '<tr><td colspan="6" style="color:#9ca3af">暂无真实预测记录（从下一次开奖归档起）</td></tr>';
+    $("realNote").textContent = "自归档日起逐期累积真实发布记录";
+  }}
+
   if (d.rows1000 && d.summary1000) {{
     var s1 = d.summary1000;
     $("st1000Rate").textContent = fmtPct(s1.rate);
@@ -325,6 +366,12 @@ def main():
         raise RuntimeError("未找到 cache/result.json，请先运行 hedge_core.py 或 update.py")
     with open(CACHE_JSON, 'r', encoding='utf-8') as f:
         data = json.load(f)
+    # 嵌入逐期真实预测记录（archive.jsonl 归档的每期开奖前真实发布）
+    try:
+        import archive
+        data['real'] = archive.load_records()
+    except Exception:
+        data['real'] = []
     html = build_html(data)
     with open(OUT_HTML, 'w', encoding='utf-8') as f:
         f.write(html)

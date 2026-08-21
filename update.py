@@ -68,6 +68,13 @@ def main():
     else:
         print("  ➖ 数据无变化（已是最新），跳过重算")
 
+    # ---- [1.5/5] 真实预测归档：回填已开奖期的结果 ----
+    try:
+        import archive
+        archive.backfill_results()
+    except Exception as e:
+        print(f"  ⚠ 回填真实预测结果异常: {str(e)[:80]}")
+
     # ---- [2/5] 暴力穷举（5924万×500期 → 专家池）----
     from formulas import FEAT_VERSION
     from engine import load_data
@@ -107,7 +114,17 @@ def main():
 
     data_changed = changed or need_pool or need_result
 
-    # ---- [5/5] 生成网页 ----
+    # ---- [5/5] 真实预测归档（每次运行都归档当期真实预测，幂等去重）----
+    try:
+        import archive
+        import json as _json
+        with open('cache/result.json', 'r', encoding='utf-8') as _f:
+            _result = _json.load(_f)
+        archive.archive_prediction(_result)
+    except Exception as e:
+        print(f"  ⚠ 归档真实预测异常: {str(e)[:80]}")
+
+    # ---- [6/5] 生成网页 ----
     print("\n[5/5] 生成静态网页")
     import gen_site
     gen_site.main()
