@@ -90,17 +90,18 @@ details[open] summary::after{content:"▴"}
 """
 
 BODY_TEMPLATE = """
-  <div class="card">
+  <div class="card" style="border:2px solid #2563eb">
     <div class="kill-box">
       <div class="kill-label" id="killLabel">下期十位杀一码</div>
       <div class="kill-num" id="killNum">-</div>
       <div class="kill-info">机制: <span class="f" id="killFormula">-</span></div>
       <div class="kill-meta" id="killMeta"></div>
+      <div class="kill-timing" id="killTiming" style="margin-top:8px;padding:6px 10px;background:#eff6ff;border-radius:8px;font-size:12px;color:#1d4ed8;line-height:1.6"></div>
     </div>
   </div>
 
   <div class="card">
-    <h3>🏆 最新开奖</h3>
+    <h3>🏆 最新开奖 <span style="color:#9ca3af;font-weight:400">(已开奖 · 用于推算下一期)</span></h3>
     <div class="balls" id="balls"><div class="ball">-</div><div class="ball">-</div><div class="ball">-</div></div>
     <div class="issue-tag" id="lastIssue"></div>
   </div>
@@ -155,7 +156,7 @@ BODY_TEMPLATE = """
   </div>
 
   <div class="card">
-    <h3>📌 真实预测记录 <span style="color:#9ca3af;font-weight:400">(每期开奖前真实发布的杀码 · 含当时参数)</span></h3>
+    <h3>📌 历史真实预测对账 <span style="color:#9ca3af;font-weight:400">(已发布过的预测 · 验证提前预测真实性)</span></h3>
     <div class="tbl-scroll" style="max-height:40vh">
       <table>
         <thead><tr><th>预测期</th><th>发布杀码</th><th>参数</th><th>发布时间</th><th>开奖十位</th><th>结果</th></tr></thead>
@@ -230,6 +231,12 @@ function render(d){{
   $("killFormula").textContent = "Hedge 加权投票 (K=" + n.n_experts + ", win=" + n.win + ")";
   $("killMeta").innerHTML = "首席专家近"+ n.win +"期命中率 <b>" + fmtPct(n.top_rate) + "</b> · 基线 90%<br>Top3票码: " + n.top3_vote.join(" / ") +
     "<br>参考: " + n.refs.map(function(r){{ return r.name + " → 杀" + r.kill; }}).join(" · ");
+  // 提前量提示：预测期 vs 发布时间 vs 开奖时间（北京 21:15）
+  if (d.generated_at && n.target_issue) {{
+    var pub = String(d.generated_at).slice(0, 16).replace("T", " ");
+    $("killTiming").innerHTML = "📅 预测 <b>" + n.target_issue + "</b> 期 · 发布 <b>" + pub + "</b><br>" +
+      "🎯 开奖 <b>" + n.target_issue + "</b> 期当天 21:15（北京）· <b>提前约 23 小时</b> · 开奖后自动更新下一期";
+  }}
   $("stRate").textContent = fmtPct(s.rate);
   $("stRate").style.color = s.rate >= s.baseline ? "#2563eb" : "#dc2626";
   $("stHit").textContent = s.hit + "/" + s.total;
