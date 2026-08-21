@@ -125,16 +125,6 @@ BODY_TEMPLATE = """
   </div>
 
   <div class="card">
-    <h3>📋 逐期真实预测记录 <span style="color:#9ca3af;font-weight:400">(500期 · 近期在上 · 含Top3票码)</span></h3>
-    <div class="tbl-scroll">
-      <table>
-        <thead><tr><th>期号</th><th>开奖</th><th>十位</th><th>票码Top3</th><th>杀码</th><th>结果</th><th>首席专家</th></tr></thead>
-        <tbody id="tbBody"></tbody>
-      </table>
-    </div>
-  </div>
-
-  <div class="card">
     <details>
       <summary>📈 1000期连续回测 <span style="color:#9ca3af;font-weight:400;font-size:11px">(walk-forward · 前500=样本外 + 后500=选出段)</span></summary>
       <div class="stat-grid" style="margin:8px 0">
@@ -156,7 +146,7 @@ BODY_TEMPLATE = """
   </div>
 
   <div class="card">
-    <h3>📌 历史真实预测对账 <span style="color:#9ca3af;font-weight:400">(已发布过的预测 · 验证提前预测真实性)</span></h3>
+    <h3>📌 真实预测记录 <span style="color:#9ca3af;font-weight:400">(每期开奖前真实发布 · 自归档日起逐期累积 · 含Top3票码)</span></h3>
     <div class="tbl-scroll" style="max-height:40vh">
       <table>
         <thead><tr><th>预测期</th><th>发布杀码</th><th>Top3票码</th><th>参数</th><th>发布时间</th><th>开奖十位</th><th>结果</th></tr></thead>
@@ -274,22 +264,6 @@ function render(d){{
   }});
   $("scanGrid").innerHTML = sg;
   $("bestScanNote").textContent = "双段稳健选优: win=" + d.best_scan.win + ", K=" + d.best_scan.k + " → 段内 " + fmtPct(d.best_scan.rate) + " · 样本外 " + (oosRate != null ? fmtPct(oosRate) : "-") + "（Top36/270展示）";
-  var html = "";
-  d.rows.forEach(function(r){{
-    var cls = r.hit ? "hit" : "miss";
-    var t3 = (r.top3 || [r.kill]).map(function(c, i){{ return i === 0 ? '<b>' + c + '</b>' : c; }}).join("·");
-    var vd = r.votes ? " · 票数分布[" + r.votes.map(function(v){{return v.toFixed(1);}}).join(",") + "]" : "";
-    var tens = (r.tens != null) ? r.tens : String(r.num).charAt(1);   // 兼容旧缓存：从开奖号取十位
-    html += '<tr class="' + (r.hit ? "" : "miss-row") + '">' +
-      '<td class="iss">' + r.issue + '</td>' +
-      '<td class="num">' + r.num + '</td>' +
-      '<td class="tens ' + (r.hit ? "ok" : "bad") + '">' + tens + '</td>' +
-      '<td class="t3">' + t3 + '</td>' +
-      '<td class="kill ' + cls + '">' + r.kill + '</td>' +
-      '<td class="res">' + (r.hit ? "✅" : "❌") + '</td>' +
-      '<td class="fname" title="' + r.fname + ' [' + r.fam + ']' + vd + '">' + r.fname + '</td></tr>';
-  }});
-  $("tbBody").innerHTML = html;
 
   // ---- 真实预测记录（每期开奖前真实发布）----
   if (d.real && d.real.length > 0) {{
