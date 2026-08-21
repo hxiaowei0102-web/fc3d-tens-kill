@@ -154,8 +154,8 @@ details[open] summary::after{content:"▴"}
     <h3>📌 历史真实预测对账 <span style="color:#9ca3af;font-weight:400">(已发布过的预测 · 验证提前预测真实性)</span></h3>
     <div class="tbl-scroll" style="max-height:40vh">
       <table>
-        <thead><tr><th>预测期</th><th>发布杀码</th><th>参数</th><th>发布时间</th><th>开奖十位</th><th>结果</th></tr></thead>
-        <tbody id="realBody"><tr><td colspan="6" style="color:#9ca3af">加载中...</td></tr></tbody>
+        <thead><tr><th>预测期</th><th>发布杀码</th><th>Top3票码</th><th>参数</th><th>发布时间</th><th>开奖十位</th><th>结果</th></tr></thead>
+        <tbody id="realBody"><tr><td colspan="7" style="color:#9ca3af">加载中...</td></tr></tbody>
       </table>
     </div>
     <div class="compare" style="margin-top:6px"><span id="realNote" style="font-size:11px;color:#9ca3af">-</span></div>
@@ -276,9 +276,14 @@ function render(d){
       var tensTxt = (r.tens != null) ? r.tens : '-';
       var tensCls = (r.hit === true) ? "ok" : (r.hit === false) ? "bad" : "";
       var pub = r.published_at ? String(r.published_at).slice(5, 16) : '-';
+      // Top3票码：票王(杀码)加粗红，其余灰色
+      var t3 = (r.top3 && r.top3.length) ? r.top3.map(function(c, i){
+        return i === 0 ? '<b style="color:#dc2626">' + c + '</b>' : '<span style="color:#9ca3af">' + c + '</span>';
+      }).join('·') : '-';
       rh += '<tr>' +
         '<td class="iss">' + r.target_issue + '</td>' +
         '<td class="kill ' + (r.hit === true ? "hit" : (r.hit === false ? "miss" : "")) + '">' + r.kill + '</td>' +
+        '<td class="t3">' + t3 + '</td>' +
         '<td class="frate">win' + r.win + '/K' + r.k + '</td>' +
         '<td class="frate">' + pub + '</td>' +
         '<td class="tens ' + tensCls + '">' + tensTxt + '</td>' +
@@ -290,7 +295,7 @@ function render(d){
     $("realNote").textContent = "已归档 " + d.real.length + " 期真实预测 · 已开奖 " + done + " 期 · 命中 " + hits + "/" + done +
       (done > 0 ? " = " + (hits/done*100).toFixed(1) + "%" : "") + "（自归档日起逐期累积，历史500期为事后重算参考）";
   } else {
-    $("realBody").innerHTML = '<tr><td colspan="6" style="color:#9ca3af">暂无真实预测记录（从下一次开奖归档起）</td></tr>';
+    $("realBody").innerHTML = '<tr><td colspan="7" style="color:#9ca3af">暂无真实预测记录（从下一次开奖归档起）</td></tr>';
     $("realNote").textContent = "自归档日起逐期累积真实发布记录";
   }
 
